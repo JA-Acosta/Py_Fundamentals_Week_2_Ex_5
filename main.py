@@ -2,7 +2,7 @@
 >>> JAAR
 >>> 07/26/2023
 >>> Practicing Fundamentals Program 11
->>> Version 1
+>>> Version 2
 '''
 
 '''
@@ -31,7 +31,7 @@ def input_length(minimum_characters : int)->int :
             return length
 
 
-def special_char_input() :
+def special_char_input()->str :
     '''
     >>> Takes a list of special characters from the user. If the characters contain integers or letters, will prompt the user to reenter the list of special characters.
 
@@ -39,14 +39,17 @@ def special_char_input() :
     '''
     while True :
         special_char = input('Enter each special character sequentially: ').replace(' ', '')
-        if special_char.isalnum() :
-            print('Your input must only contain special characters!')
+        if not special_char :
+            print('Enter at least one special character.')
+            continue
+        if any(char.isalnum() for char in special_char) :
+            print('Please only enter special characters.')
             continue
         return special_char
 
 def number_of(char_type : str)->int :
     '''
-    >>> Asks the user for the number of a character types specified needed for password requirements.
+    >>> Asks the user for the minimum number of a character type required for the password.
 
     >>> Param: (str) char_type
     >>> Return: (int) response
@@ -59,46 +62,34 @@ def number_of(char_type : str)->int :
         else :
             return response
 
-def create_password(password_requirements : dict, length : int, special_char : str)->str :
+def create_password(requirements : dict, length : int)->str :
     '''
     >>> Creates a random password for the user based on the users specifications.
 
-    >>> Param: (dict) password_requirements, (int) length, (str) special_char
+    >>> Param: (dict) password_requirements, (int) length
     >>> Return: (str) password
     '''
-    character_list = ''
-    if password_requirements['special'] :
-        character_list += special_char
-    if password_requirements['integer'] :
-        character_list += string.digits
-    if password_requirements['uppercase'] :
-        character_list += string.ascii_uppercase
-    if password_requirements['lowercase'] :
-        character_list += string.ascii_lowercase
-    print(character_list)
+    character_list = ''.join(requirements[key][1] for key in requirements.keys() if requirements[key][0])
+
     while True :
         password = ''.join(random.choice(character_list) for _ in range(length))
-        if password_requirements['special'] and sum(1 for ch in password if ch in special_char) < password_requirements['special'] :
-                continue
-        if password_requirements['integer'] and sum(1 for ch in password if ch.isnumeric()) < password_requirements['integer'] :
-                continue
-        if password_requirements['lowercase'] and sum(1 for ch in password if ch.islower()) < password_requirements['lowercase'] :
-                continue
-        if password_requirements['uppercase'] and sum(1 for ch in password if ch.isupper()) < password_requirements['uppercase'] :
-                continue
+        for key in requirements.keys() :
+            requirements[key][2] = sum(1 for ch in password if ch in requirements[key][1])
+        if any(requirements[key][0] < requirements[key][2] for key in requirements.keys()) :
+            continue
         return password
 
 def main() :
     print("Lets come up with a strong password together.")
-    password_requirements = {}
-    password_requirements['special'] = number_of('special characters')
-    password_requirements['uppercase'] = number_of('uppercase characters')
-    password_requirements['integer'] = number_of('integers')
-    password_requirements['lowercase'] = number_of('lowercase characters')
-    length = input_length(sum(password_requirements.values()))
-    if password_requirements['special'] :
-        special_char = special_char_input()
-    print(create_password(password_requirements, length, special_char))
+    requirements = {} # Value = [(int) type requirement, (str) char of type, (int) password type occurrence]
+    requirements['special'] = [number_of('special characters'), '', 0]
+    requirements['uppercase'] = [number_of('uppercase characters'), string.ascii_uppercase, 0]
+    requirements['lowercase'] = [number_of('lowercase characters'), string.ascii_lowercase, 0]
+    requirements['integer'] = [number_of('integers'), string.digits, 0]
+    length = input_length(sum( requirements[key][0] for key in requirements.keys() if requirements[key][0]))
+    if requirements['special'][0] :
+        requirements['special'][1] = special_char_input()
+    print(create_password(requirements, length))
 
 if __name__ == '__main__' :
     main()
